@@ -14,13 +14,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Category {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  supplements Supplement[]
+
+  @@map("categories")
+}
+
 model Supplement {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  price       Float
+  categoryId  Int
+  rating      Float    @default(0)
+  reviews     Int      @default(0)
+  topPrice    String // Store as string to handle currency formatting
+  badge       String? // e.g., "Most Searched", "Best Price", etc.
+  link        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relations
+  category   Category            @relation(fields: [categoryId], references: [id])
+  benefits   SupplementBenefit[]
+  products   Product[]
+  usageGuide UsageGuide?
+
   @@map("supplements")
+}
+
+model Benefit {
+  id          Int                 @id @default(autoincrement())
+  name        String              @unique
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  supplements SupplementBenefit[]
+
+  @@map("benefits")
+}
+
+model SupplementBenefit {
+  supplementId Int
+  benefitId    Int
+  supplement   Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+  benefit      Benefit    @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+
+  @@id([supplementId, benefitId])
+  @@map("supplement_benefits")
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  rank         Int? // Ranking position (1, 2, 3, etc.)
+  name         String
+  brand        String
+  price        String // Store as string to handle currency formatting
+  rating       Float    @default(0)
+  reviews      Int      @default(0)
+  dosage       String // e.g., "15mg", "22mg"
+  capsules     String // e.g., "60", "90", "250ml"
+  badge        String? // e.g., "Best Value", "Best Absorption"
+  supplementId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  supplement Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  @@map("products")
+}
+
+model UsageGuide {
+  id           Int      @id @default(autoincrement())
+  supplementId Int      @unique
+  timing       String? // e.g., "Morning or evening"
+  timingDesc   String? // Additional timing description
+  withFood     String? // e.g., "Empty stomach"
+  withFoodDesc String? // Additional food instructions
+  timeToEffect String? // e.g., "2-4 weeks"
+  effectDesc   String? // Description of when effects are noticed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  supplement Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  @@map("usage_guides")
 }
