@@ -1,137 +1,152 @@
+"use client"
+
+// ===== PÁGINA DETALHADA DE SUPLEMENTO - VITAMIN C =====
+// Página específica para Vitamin C com características únicas
+// Implementado em 30/05/2024 seguindo o padrão estabelecido
+// Destaque para antioxidantes, collagen synthesis, iron absorption
+
+// ===== IMPORTS PADRÃO DO SISTEMA =====
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Clock, Utensils, Calendar, Star, Award, Medal, Trophy } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useEffect, useState, useRef } from "react"
+
+// ===== INTERFACES PARA VITAMIN C =====
+interface Product {
+  id: number
+  rank?: number          // Ranking para produtos de Vitamin C
+  name: string           // "Vitamin C 1000mg", "Buffered Vitamin C", "Liposomal"
+  brand: string          // "ImmunePlus", "GentleHealth", "BioAvailable"
+  price: string          // Preços típicos de Vitamin C
+  rating: number
+  reviews: number
+  dosage: string         // Dosagens: "1000mg", "500mg", "750mg"
+  capsules: string       // Formatos: tablets, powder, effervescent
+  badge?: string         // "Best Potency", "Stomach Friendly", "Superior Absorption"
+}
+
+interface UsageGuide {
+  timing?: string        // "Morning and evening" (específico para C)
+  timingDesc?: string    // Divisão de doses ao longo do dia
+  withFood?: string      // "With or without food" (flexível para C)
+  withFoodDesc?: string  // Redução de irritação gástrica
+  timeToEffect?: string  // "1-2 weeks" (efeito mais rápido que D3)
+  effectDesc?: string    // Efeitos antioxidantes e imunológicos
+}
+
+interface Benefit {
+  name: string           // "Antioxidant", "Collagen", "Immunity", "Iron Absorption"
+  description?: string   // Benefícios específicos da Vitamin C
+}
+
+interface Supplement {
+  id: number
+  name: string
+  description: string
+  category: string
+  rating: number
+  reviews: number
+  topPrice: string
+  badge?: string
+  link?: string
+  benefits: Benefit[]
+  products: Product[]
+  usageGuide?: UsageGuide
+}
 
 export default function VitaminCPage() {
-  const topPicks = [
-    {
-      rank: 1,
-      name: "Vitamin C 1000mg",
-      brand: "ImunoMax",
-      price: "$32.90",
-      rating: 4.8,
-      reviews: 1678,
-      dosage: "1000mg",
-      capsules: 60,
-      badge: "Best Value",
-    },
-    {
-      rank: 2,
-      name: "Liposomal Vitamin C",
-      brand: "BioAbsorb",
-      price: "$68.90",
-      rating: 4.9,
-      reviews: 934,
-      dosage: "1000mg",
-      capsules: 60,
-      badge: "Best Absorption",
-    },
-    {
-      rank: 3,
-      name: "Vitamin C + Zinc",
-      brand: "ImunoShield",
-      price: "$45.90",
-      rating: 4.7,
-      reviews: 1245,
-      dosage: "500mg + 10mg Zinc",
-      capsules: 90,
-      badge: "Best Combination",
-    },
-  ]
+  // ===== ESTADOS DO COMPONENTE =====
+  const [supplement, setSupplement] = useState<Supplement | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const hasFetched = useRef(false)
 
-  const top10Products = [
-    ...topPicks,
-    {
-      rank: 4,
-      name: "Effervescent Vitamin C",
-      brand: "FizzVit",
-      price: "$28.90",
-      rating: 4.6,
-      reviews: 823,
-      dosage: "1000mg",
-      capsules: "20 tablets",
-    },
-    {
-      rank: 5,
-      name: "Natural Vitamin C",
-      brand: "OrganicLife",
-      price: "$54.90",
-      rating: 4.5,
-      reviews: 567,
-      dosage: "500mg",
-      capsules: 120,
-    },
-    {
-      rank: 6,
-      name: "Chewable Vitamin C",
-      brand: "ChewVit",
-      price: "$35.90",
-      rating: 4.4,
-      reviews: 445,
-      dosage: "500mg",
-      capsules: "60 tablets",
-    },
-    {
-      rank: 7,
-      name: "Vitamin C + Bioflavonoids",
-      brand: "ComplexVit",
-      price: "$42.90",
-      rating: 4.3,
-      reviews: 378,
-      dosage: "1000mg + 100mg",
-      capsules: 90,
-    },
-    {
-      rank: 8,
-      name: "Vitamin C Gummies",
-      brand: "GummyHealth",
-      price: "$39.90",
-      rating: 4.2,
-      reviews: 312,
-      dosage: "250mg",
-      capsules: "60 gummies",
-    },
-    {
-      rank: 9,
-      name: "Vitamin C Powder",
-      brand: "PurePowder",
-      price: "$48.90",
-      rating: 4.1,
-      reviews: 267,
-      dosage: "1000mg/scoop",
-      capsules: "100g",
-    },
-    {
-      rank: 10,
-      name: "Vitamin C Basic",
-      brand: "EssentialVit",
-      price: "$24.90",
-      rating: 4.0,
-      reviews: 198,
-      dosage: "500mg",
-      capsules: 60,
-    },
-  ]
+  // ===== BUSCA DADOS DA VITAMIN C =====
+  useEffect(() => {
+    async function fetchVitaminCData() {
+      if (hasFetched.current) {
+        console.log('⚠️ Skipping duplicate fetch call')
+        return
+      }
+      
+      hasFetched.current = true
+      
+      try {
+        console.log('🔍 Fetching Vitamin C data...')
+        // Busca Vitamin C (ID = 3) com produtos diversos
+        // Inclui diferentes formas: regular, buffered, liposomal, time-release
+        const response = await fetch('/api/supplements/3')
+        if (!response.ok) {
+          throw new Error('Failed to fetch vitamin C details')
+        }
+        const detailData = await response.json()
+        setSupplement(detailData)
+        console.log('✅ Vitamin C data loaded successfully')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+        hasFetched.current = false
+      } finally {
+        setLoading(false)
+      }
+    }
 
+    fetchVitaminCData()
+  }, [])
+
+  // ===== ÍCONES DE RANKING =====
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />
+        return <Trophy className="h-5 w-5 text-yellow-500" />     // Melhor Vitamin C
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />
+        return <Medal className="h-5 w-5 text-gray-400" />       // Segunda opção
       case 3:
-        return <Award className="h-5 w-5 text-amber-600" />
+        return <Award className="h-5 w-5 text-amber-600" />      // Terceira opção
       default:
         return <span className="text-sm font-bold text-gray-600">#{rank}</span>
     }
   }
 
+  // ===== LOADING STATE =====
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Vitamin C information...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== ERROR STATE =====
+  if (error || !supplement) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">Error: {error || 'Supplement not found'}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-green-600 hover:bg-green-700"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== PROCESSAMENTO DE PRODUTOS =====
+  const topPicks = supplement.products.filter(p => p.rank && p.rank <= 3).sort((a, b) => (a.rank || 0) - (b.rank || 0))
+  const allProducts = supplement.products.sort((a, b) => (a.rank || 0) - (b.rank || 0))
+
+  // ===== RENDERIZAÇÃO DA PÁGINA VITAMIN C =====
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* ===== HEADER PADRÃO =====*/}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -146,218 +161,205 @@ export default function VitaminCPage() {
                 />
               </Link>
             </div>
-            <Link href="/">
+            <Link href="/supplements">
               <Button variant="outline" className="flex items-center space-x-2">
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
+                <span>Back to Supplements</span>
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* ===== CONTEÚDO ESPECÍFICO VITAMIN C ===== */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Supplement Header */}
+        {/* ===== CABEÇALHO VITAMIN C ===== */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Vitamin C</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{supplement.name}</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Powerful antioxidant essential for immunity, collagen and cellular protection
+            {supplement.description}
           </p>
         </div>
 
-        {/* Information about Vitamin C */}
+        {/* ===== BENEFÍCIOS ÚNICOS DA VITAMIN C ===== */}
+        {/* Antioxidant power, Collagen synthesis, Iron absorption, Immunity boost */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">How Vitamin C Helps Our Body</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">How {supplement.name} Helps Our Body</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Antioxidant</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Protects cells against free radical damage and premature aging.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Collagen Production</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Essential for healthy skin, wound healing and elasticity.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Immune System</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Strengthens natural defenses and reduces cold duration.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Iron Absorption</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Improves iron absorption, preventing anemia.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Usage Guide */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Usage Guide</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Best Time</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>Morning and afternoon</strong>
-                </p>
-                <p className="text-gray-600">Split the dose into 2 takes for better absorption and utilization.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Utensils className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">With or Without Food</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>With food</strong>
-                </p>
-                <p className="text-gray-600">Take with meals to avoid gastric discomfort. Avoid with milk or coffee.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Time to Effect</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>1-2 weeks</strong>
-                </p>
-                <p className="text-gray-600">Immunity benefits in 1-2 weeks, skin benefits in 4-6 weeks.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Top 3 Picks */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">🏆 Top 3 Best Vitamin C Supplements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topPicks.map((product) => (
-              <Card key={product.rank} className="relative hover:shadow-lg transition-shadow duration-300">
-                <div className="absolute -top-3 left-4">
-                  <Badge className="bg-green-600 text-white">{product.badge}</Badge>
-                </div>
-                <CardHeader className="pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    {getRankIcon(product.rank)}
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-sm text-gray-500">({product.reviews})</span>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                  <CardDescription>{product.brand}</CardDescription>
+            {supplement.benefits.map((benefit, index) => (
+              <Card key={index}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{benefit.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Dosage:</span>
-                      <span className="font-medium">{product.dosage}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Capsules:</span>
-                      <span className="font-medium">{product.capsules}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-green-600">{product.price}</span>
-                    <Button className="bg-green-600 hover:bg-green-700">View Product</Button>
-                  </div>
+                  <p className="text-gray-600">
+                    {benefit.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        {/* Complete Top 10 */}
-        <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            📊 Complete Ranking - Top 10 Vitamin C Supplements
-          </h2>
-          <div className="space-y-4">
-            {top10Products.map((product) => (
-              <Card key={product.rank} className="hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    <div className="flex items-center space-x-4 flex-shrink-0">
-                      {getRankIcon(product.rank)}
-                      <div>
-                        <h3 className="font-semibold text-lg">{product.name}</h3>
-                        <p className="text-gray-600">{product.brand}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Dosage</span>
-                        <p className="font-medium">{product.dosage}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Quantity</span>
-                        <p className="font-medium">{product.capsules}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Rating</span>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{product.rating}</span>
-                          <span className="text-gray-500">({product.reviews})</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Price</span>
-                        <p className="font-bold text-green-600">{product.price}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex-shrink-0">
-                      <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                        View Details
-                      </Button>
-                    </div>
+        {/* ===== GUIA DE USO ESPECÍFICO PARA VITAMIN C ===== */}
+        {/* Divisão de doses, flexibilidade com comida, absorção rápida */}
+        {supplement.usageGuide && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">📋 How to Take {supplement.name}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">Best Time</CardTitle>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.timing}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.timingDesc}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Utensils className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">With or Without Food</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.withFood}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.withFoodDesc}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">Time to Effect</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.timeToEffect}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.effectDesc}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
+        {/* Top 3 Picks */}
+        {topPicks.length > 0 && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">🏆 Top 3 Best {supplement.name} Supplements</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {topPicks.map((product) => (
+                <Card key={product.id} className="relative hover:shadow-lg transition-shadow duration-300">
                   {product.badge && (
-                    <div className="mt-3">
-                      <Badge variant="secondary">{product.badge}</Badge>
+                    <div className="absolute -top-3 left-4">
+                      <Badge className="bg-green-600 text-white">{product.badge}</Badge>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+                  <CardHeader className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      {product.rank && getRankIcon(product.rank)}
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{product.rating}</span>
+                        <span className="text-sm text-gray-500">({product.reviews})</span>
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg">{product.name}</CardTitle>
+                    <CardDescription>{product.brand}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Dosage:</span>
+                        <span className="font-medium">{product.dosage}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capsules:</span>
+                        <span className="font-medium">{product.capsules}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-green-600">{product.price}</span>
+                      <Button className="bg-green-600 hover:bg-green-700">View Product</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Complete Ranking */}
+        {allProducts.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+              📊 Complete Ranking - Top {allProducts.length} {supplement.name} Supplements
+            </h2>
+            <div className="space-y-4">
+              {allProducts.map((product) => (
+                <Card key={product.id} className="hover:shadow-md transition-shadow duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="flex items-center space-x-4 flex-shrink-0">
+                        {product.rank && getRankIcon(product.rank)}
+                        <div>
+                          <h3 className="font-semibold text-lg">{product.name}</h3>
+                          <p className="text-gray-600">{product.brand}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Dosage</span>
+                          <p className="font-medium">{product.dosage}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Quantity</span>
+                          <p className="font-medium">{product.capsules}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Rating</span>
+                          <div className="flex items-center space-x-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-medium">{product.rating}</span>
+                            <span className="text-gray-500">({product.reviews})</span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Price</span>
+                          <p className="font-bold text-green-600">{product.price}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0">
+                        <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                    {product.badge && (
+                      <div className="mt-3">
+                        <Badge variant="secondary">{product.badge}</Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
@@ -386,9 +388,9 @@ export default function VitaminCPage() {
                   </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link href="/supplements" className="hover:text-white transition-colors">
                     All Supplements
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white transition-colors">

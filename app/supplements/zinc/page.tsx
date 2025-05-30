@@ -1,140 +1,167 @@
+"use client"
+
+// ===== PÁGINA DETALHADA DE SUPLEMENTO - ZINC =====
+// Página completa com informações detalhadas sobre o suplemento Zinc
+// Implementado em 30/05/2024 como modelo para outras páginas de suplementos
+// Inclui: benefícios, guia de uso, ranking de produtos, comparações e análises
+
+// ===== IMPORTS DE COMPONENTES UI =====
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Clock, Utensils, Calendar, Star, Award, Medal, Trophy } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useEffect, useState, useRef } from "react"
+
+// ===== INTERFACES DE TIPOS =====
+// Definem a estrutura dos dados conforme retornados pela API
+
+// Estrutura de um produto individual (marca específica do suplemento)
+interface Product {
+  id: number
+  rank?: number          // Posição no ranking (1=melhor)
+  name: string           // Nome comercial do produto
+  brand: string          // Marca/fabricante
+  price: string          // Preço formatado
+  rating: number         // Avaliação de 0-5 estrelas
+  reviews: number        // Número de reviews
+  dosage: string         // Dosagem (ex: "15mg")
+  capsules: string       // Quantidade/formato (ex: "60 cápsulas")
+  badge?: string         // Badge especial (ex: "Best Value")
+}
+
+// Estrutura do guia de uso (instruções de como tomar)
+interface UsageGuide {
+  timing?: string        // Melhor horário (ex: "Morning")
+  timingDesc?: string    // Descrição detalhada do horário
+  withFood?: string      // Com ou sem comida
+  withFoodDesc?: string  // Descrição sobre comida
+  timeToEffect?: string  // Tempo para sentir efeitos
+  effectDesc?: string    // Descrição dos efeitos
+}
+
+// Estrutura de um benefício do suplemento
+interface Benefit {
+  name: string           // Nome do benefício
+  description?: string   // Descrição detalhada
+}
+
+// Estrutura completa do suplemento com todas as relações
+interface Supplement {
+  id: number
+  name: string
+  description: string
+  category: string
+  rating: number
+  reviews: number
+  topPrice: string
+  badge?: string
+  link?: string
+  benefits: Benefit[]    // Array de benefícios
+  products: Product[]    // Array de produtos/marcas
+  usageGuide?: UsageGuide // Guia de uso (opcional)
+}
 
 export default function ZincPage() {
-  const topPicks = [
-    {
-      rank: 1,
-      name: "Premium Zinc Chelate",
-      brand: "VitaMax",
-      price: "$45.90",
-      rating: 4.8,
-      reviews: 1247,
-      dosage: "15mg",
-      capsules: 60,
-      badge: "Best Value",
-    },
-    {
-      rank: 2,
-      name: "Zinc Picolinate",
-      brand: "NutriLife",
-      price: "$52.90",
-      rating: 4.7,
-      reviews: 892,
-      dosage: "22mg",
-      capsules: 90,
-      badge: "Best Absorption",
-    },
-    {
-      rank: 3,
-      name: "Zinc Bisglycinate",
-      brand: "SupremeHealth",
-      price: "$38.90",
-      rating: 4.6,
-      reviews: 634,
-      dosage: "10mg",
-      capsules: 120,
-      badge: "Best Seller",
-    },
-  ]
+  // ===== ESTADOS DO COMPONENTE =====
+  const [supplement, setSupplement] = useState<Supplement | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  // Ref para evitar múltiplas chamadas da API (problema comum no React 18)
+  const hasFetched = useRef(false)
 
-  const top10Products = [
-    ...topPicks,
-    {
-      rank: 4,
-      name: "Zinc Complex",
-      brand: "BioActive",
-      price: "$41.90",
-      rating: 4.5,
-      reviews: 523,
-      dosage: "15mg",
-      capsules: 60,
-    },
-    {
-      rank: 5,
-      name: "Organic Zinc",
-      brand: "NaturalPlus",
-      price: "$49.90",
-      rating: 4.4,
-      reviews: 445,
-      dosage: "20mg",
-      capsules: 90,
-    },
-    {
-      rank: 6,
-      name: "Zinc Gluconate",
-      brand: "HealthFirst",
-      price: "$35.90",
-      rating: 4.3,
-      reviews: 378,
-      dosage: "14mg",
-      capsules: 100,
-    },
-    {
-      rank: 7,
-      name: "Zinc + Vitamin C",
-      brand: "ImunoBoost",
-      price: "$44.90",
-      rating: 4.2,
-      reviews: 312,
-      dosage: "12mg",
-      capsules: 60,
-    },
-    {
-      rank: 8,
-      name: "Pure Zinc",
-      brand: "CleanSupps",
-      price: "$39.90",
-      rating: 4.1,
-      reviews: 267,
-      dosage: "18mg",
-      capsules: 90,
-    },
-    {
-      rank: 9,
-      name: "Liquid Zinc",
-      brand: "LiquidHealth",
-      price: "$56.90",
-      rating: 4.0,
-      reviews: 198,
-      dosage: "15mg/ml",
-      capsules: "250ml",
-    },
-    {
-      rank: 10,
-      name: "Zinc Essential",
-      brand: "BasicNutrition",
-      price: "$29.90",
-      rating: 3.9,
-      reviews: 156,
-      dosage: "10mg",
-      capsules: 60,
-    },
-  ]
+  // ===== EFFECT PARA BUSCAR DADOS DO SUPLEMENTO =====
+  // Busca informações completas do Zinc da API
+  useEffect(() => {
+    async function fetchZincData() {
+      // Previne chamadas duplicadas da API
+      if (hasFetched.current) {
+        console.log('⚠️ Skipping duplicate fetch call')
+        return
+      }
+      
+      hasFetched.current = true
+      
+      try {
+        console.log('🔍 Fetching zinc data...')
+        // Busca dados do Zinc (ID = 1) da API
+        // Retorna dados completos: benefícios, produtos, guia de uso
+        const response = await fetch('/api/supplements/1')
+        if (!response.ok) {
+          throw new Error('Failed to fetch zinc details')
+        }
+        const detailData = await response.json()
+        setSupplement(detailData)
+        console.log('✅ Zinc data loaded successfully')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+        hasFetched.current = false // Reset em caso de erro para permitir retry
+      } finally {
+        setLoading(false)
+      }
+    }
 
+    fetchZincData()
+  }, [])
+
+  // ===== FUNÇÃO PARA ÍCONES DE RANKING =====
+  // Retorna ícones especiais para os 3 primeiros colocados
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />
+        return <Trophy className="h-5 w-5 text-yellow-500" />     // Troféu dourado
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />
+        return <Medal className="h-5 w-5 text-gray-400" />       // Medalha prata
       case 3:
-        return <Award className="h-5 w-5 text-amber-600" />
+        return <Award className="h-5 w-5 text-amber-600" />      // Medalha bronze
       default:
-        return <span className="text-sm font-bold text-gray-600">#{rank}</span>
+        return <span className="text-sm font-bold text-gray-600">#{rank}</span> // Número normal
     }
   }
 
+  // ===== TELA DE LOADING =====
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading zinc information...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== TELA DE ERRO =====
+  if (error || !supplement) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">Error: {error || 'Supplement not found'}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-green-600 hover:bg-green-700"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== PROCESSAMENTO DOS DADOS =====
+  // Separa os produtos em categorias para exibição
+  const topPicks = supplement.products.filter(p => p.rank && p.rank <= 3).sort((a, b) => (a.rank || 0) - (b.rank || 0))
+  const allProducts = supplement.products.sort((a, b) => (a.rank || 0) - (b.rank || 0))
+
+  // ===== RENDERIZAÇÃO PRINCIPAL =====
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* ===== HEADER COM NAVEGAÇÃO ===== */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="hover:opacity-80 transition-opacity">
                 <Image
@@ -146,222 +173,207 @@ export default function ZincPage() {
                 />
               </Link>
             </div>
-            <Link href="/">
+            {/* Botão de voltar */}
+            <Link href="/supplements">
               <Button variant="outline" className="flex items-center space-x-2">
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
+                <span>Back to Supplements</span>
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* ===== CONTEÚDO PRINCIPAL ===== */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Supplement Header */}
+        {/* ===== CABEÇALHO DO SUPLEMENTO ===== */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Zinc</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{supplement.name}</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Essential mineral for immune system, wound healing and healthy skin
+            {supplement.description}
           </p>
         </div>
 
-        {/* Information about Zinc */}
+        {/* ===== SEÇÃO DE BENEFÍCIOS ===== */}
+        {/* Mostra como o suplemento ajuda o corpo */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">How Zinc Helps Our Body</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">How {supplement.name} Helps Our Body</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Immune System</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Strengthens the body's natural defenses and helps in the production of immune cells.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Wound Healing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Accelerates wound recovery and maintains skin integrity.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Hair and Nails</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Essential for healthy hair growth and nail strengthening.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Metabolism</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Participates in more than 300 enzymatic reactions in the body.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Usage Guide */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Usage Guide</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Best Time</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>Morning or evening</strong>
-                </p>
-                <p className="text-gray-600">Preferably 1-2 hours before meals for better absorption.</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Utensils className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">With or Without Food</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>Empty stomach</strong>
-                </p>
-                <p className="text-gray-600">
-                  Avoid taking with dairy, coffee or high-fiber foods that may reduce absorption.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Time to Effect</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">
-                  <strong>2-4 weeks</strong>
-                </p>
-                <p className="text-gray-600">First benefits may be noticed after 2-4 weeks of regular use.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Top 3 Picks */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">🏆 Top 3 Best Zinc Supplements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topPicks.map((product) => (
-              <Card key={product.rank} className="relative hover:shadow-lg transition-shadow duration-300">
-                <div className="absolute -top-3 left-4">
-                  <Badge className="bg-green-600 text-white">{product.badge}</Badge>
-                </div>
-                <CardHeader className="pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    {getRankIcon(product.rank)}
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-sm text-gray-500">({product.reviews})</span>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                  <CardDescription>{product.brand}</CardDescription>
+            {supplement.benefits.map((benefit, index) => (
+              <Card key={index}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{benefit.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Dosage:</span>
-                      <span className="font-medium">{product.dosage}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Capsules:</span>
-                      <span className="font-medium">{product.capsules}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-green-600">{product.price}</span>
-                    <Button className="bg-green-600 hover:bg-green-700">View Product</Button>
-                  </div>
+                  <p className="text-gray-600">
+                    {benefit.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        {/* Complete Top 10 */}
-        <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            📊 Complete Ranking - Top 10 Zinc Supplements
-          </h2>
-          <div className="space-y-4">
-            {top10Products.map((product) => (
-              <Card key={product.rank} className="hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    <div className="flex items-center space-x-4 flex-shrink-0">
-                      {getRankIcon(product.rank)}
-                      <div>
-                        <h3 className="font-semibold text-lg">{product.name}</h3>
-                        <p className="text-gray-600">{product.brand}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Dosage</span>
-                        <p className="font-medium">{product.dosage}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Quantity</span>
-                        <p className="font-medium">{product.capsules}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Rating</span>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{product.rating}</span>
-                          <span className="text-gray-500">({product.reviews})</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Price</span>
-                        <p className="font-bold text-green-600">{product.price}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex-shrink-0">
-                      <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                        View Details
-                      </Button>
-                    </div>
+        {/* ===== GUIA DE USO ===== */}
+        {/* Instruções detalhadas de como tomar o suplemento */}
+        {supplement.usageGuide && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">📋 How to Take {supplement.name}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Card de horário */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">Best Time</CardTitle>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.timing}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.timingDesc}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Utensils className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">With or Without Food</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.withFood}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.withFoodDesc}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-lg">Time to Effect</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{supplement.usageGuide.timeToEffect}</strong>
+                  </p>
+                  <p className="text-gray-600">{supplement.usageGuide.effectDesc}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
+
+        {/* Top 3 Picks */}
+        {topPicks.length > 0 && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">🏆 Top 3 Best {supplement.name} Supplements</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {topPicks.map((product) => (
+                <Card key={product.id} className="relative hover:shadow-lg transition-shadow duration-300">
                   {product.badge && (
-                    <div className="mt-3">
-                      <Badge variant="secondary">{product.badge}</Badge>
+                    <div className="absolute -top-3 left-4">
+                      <Badge className="bg-green-600 text-white">{product.badge}</Badge>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+                  <CardHeader className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      {product.rank && getRankIcon(product.rank)}
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{product.rating}</span>
+                        <span className="text-sm text-gray-500">({product.reviews})</span>
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg">{product.name}</CardTitle>
+                    <CardDescription>{product.brand}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Dosage:</span>
+                        <span className="font-medium">{product.dosage}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capsules:</span>
+                        <span className="font-medium">{product.capsules}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-green-600">{product.price}</span>
+                      <Button className="bg-green-600 hover:bg-green-700">View Product</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Complete Ranking */}
+        {allProducts.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+              📊 Complete Ranking - Top {allProducts.length} {supplement.name} Supplements
+            </h2>
+            <div className="space-y-4">
+              {allProducts.map((product) => (
+                <Card key={product.id} className="hover:shadow-md transition-shadow duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="flex items-center space-x-4 flex-shrink-0">
+                        {product.rank && getRankIcon(product.rank)}
+                        <div>
+                          <h3 className="font-semibold text-lg">{product.name}</h3>
+                          <p className="text-gray-600">{product.brand}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Dosage</span>
+                          <p className="font-medium">{product.dosage}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Quantity</span>
+                          <p className="font-medium">{product.capsules}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Rating</span>
+                          <div className="flex items-center space-x-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-medium">{product.rating}</span>
+                            <span className="text-gray-500">({product.reviews})</span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Price</span>
+                          <p className="font-bold text-green-600">{product.price}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0">
+                        <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                    {product.badge && (
+                      <div className="mt-3">
+                        <Badge variant="secondary">{product.badge}</Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
@@ -390,9 +402,9 @@ export default function ZincPage() {
                   </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link href="/supplements" className="hover:text-white transition-colors">
                     All Supplements
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
