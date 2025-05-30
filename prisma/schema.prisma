@@ -14,13 +14,110 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Supplement {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  price       Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ===== ESTRUTURA DO BANCO DE DADOS PARA NOOTROWORLD =====
+// Sistema completo de gerenciamento de suplementos com categorias,
+// benefícios, produtos e guias de uso. Implementado em 30/05/2024.
 
+// Tabela de categorias de suplementos (ex: Vitaminas, Minerais, etc)
+model Category {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  // Relacionamento: uma categoria pode ter vários suplementos
+  supplements Supplement[]
+
+  @@map("categories")
+}
+
+// Tabela principal de suplementos - contém informações básicas de cada suplemento
+model Supplement {
+  id          Int                    @id @default(autoincrement())
+  name        String                 // Nome do suplemento (ex: "Vitamin D3")
+  description String?                // Descrição detalhada dos benefícios
+  categoryId  Int                    // FK para categoria
+  rating      Float                  @default(0) // Avaliação média (0-5)
+  reviews     Int                    @default(0) // Número total de reviews
+  topPrice    String                 // Preço formatado como string (ex: "$12.99")
+  badge       String?                // Badge especial (ex: "Most Searched", "Best Price")
+  link        String?                // Link para página detalhada do suplemento
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  
+  // ===== RELACIONAMENTOS =====
+  category    Category               @relation(fields: [categoryId], references: [id])
+  benefits    SupplementBenefit[]    // Relacionamento many-to-many com benefícios
+  products    Product[]              // Lista de produtos/marcas deste suplemento
+  usageGuide  UsageGuide?            // Guia de uso específico (um-para-um)
+  
   @@map("supplements")
+}
+
+// Tabela de benefícios - separada para permitir reutilização entre suplementos
+model Benefit {
+  id          Int                    @id @default(autoincrement())
+  name        String                 @unique // Nome do benefício (ex: "Immune Support")
+  description String?                // Descrição detalhada do benefício
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  // Relacionamento many-to-many com suplementos
+  supplements SupplementBenefit[]
+
+  @@map("benefits")
+}
+
+// Tabela de junção para relacionamento many-to-many entre Suplementos e Benefícios
+// Um suplemento pode ter vários benefícios e um benefício pode estar em vários suplementos
+model SupplementBenefit {
+  supplementId Int
+  benefitId    Int
+  supplement   Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+  benefit      Benefit    @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+
+  @@id([supplementId, benefitId])
+  @@map("supplement_benefits")
+}
+
+// Tabela de produtos - diferentes marcas/versões de um mesmo suplemento
+// Ex: Para Vitamin D3 podem haver produtos da marca X, Y, Z com diferentes dosagens
+model Product {
+  id           Int        @id @default(autoincrement())
+  rank         Int?       // Posição no ranking (1=melhor, 2=segundo melhor, etc)
+  name         String     // Nome comercial do produto
+  brand        String     // Marca/fabricante
+  price        String     // Preço formatado (ex: "$24.99")
+  rating       Float      @default(0) // Avaliação específica deste produto
+  reviews      Int        @default(0) // Reviews específicas deste produto
+  dosage       String     // Dosagem (ex: "1000 IU", "500mg")
+  capsules     String     // Quantidade/formato (ex: "120 cápsulas", "250ml")
+  badge        String?    // Badge do produto (ex: "Best Value", "Best Absorption")
+  supplementId Int        // FK para o suplemento pai
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relacionamento: produto pertence a um suplemento
+  supplement   Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  @@map("products")
+}
+
+// Tabela de guias de uso - instruções específicas para cada suplemento
+// Contém informações sobre quando e como tomar o suplemento
+model UsageGuide {
+  id           Int        @id @default(autoincrement())
+  supplementId Int        @unique // Relacionamento 1:1 com suplemento
+  timing       String?    // Melhor horário (ex: "Morning", "Evening")
+  timingDesc   String?    // Descrição adicional do horário
+  withFood     String?    // Instruções sobre comida (ex: "With food", "Empty stomach")
+  withFoodDesc String?    // Descrição adicional sobre comida
+  timeToEffect String?    // Tempo para sentir efeitos (ex: "2-4 weeks")
+  effectDesc   String?    // Descrição dos efeitos esperados
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relacionamento 1:1 com suplemento
+  supplement   Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  @@map("usage_guides")
 }
