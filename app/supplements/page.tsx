@@ -100,9 +100,9 @@ export default function SupplementsPage() {
                 <Image
                   src="/images/nootroworld-logo.png"
                   alt="NootroWorld"
-                  width={280}
+                  width={140}
                   height={56}
-                  className="h-12 w-auto"
+                  className="h-20 w-auto"
                 />
               </Link>
             </div>
