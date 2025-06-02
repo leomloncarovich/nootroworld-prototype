@@ -41,7 +41,10 @@ export async function GET() {
       topPrice: supplement.topPrice,
       badge: supplement.badge,
       link: supplement.link,
-      benefits: supplement.benefits.map((sb: any) => sb.benefit.name), // Array simples de nomes
+      benefits: supplement.benefits.map((sb: any) => ({
+        name: sb.benefit.name,
+        description: sb.benefit.description
+      })), // Array de objetos com name e description
       products: supplement.products,
       usageGuide: supplement.usageGuide,
       updatedAt: supplement.updatedAt
