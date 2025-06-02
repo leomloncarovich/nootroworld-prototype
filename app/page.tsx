@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
+import { Header, Footer } from "@/components/layout"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -22,28 +23,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <Image
-                  src="/images/nootroworld-logo.png"
-                  alt="NootroWorld"
-                  width={140}
-                  height={56}
-                  className="h-20 w-auto"
-                />
-              </Link>
-            </div>
-
-            {/* Menu */}
-            <div></div>
-          </div>
-        </div>
-      </header>
+      {/* Header Component */}
+      <Header showBackButton={false} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -116,64 +97,8 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Logo and description */}
-            <div>
-              <div className="mb-4">
-                <Image
-                  src="/images/nootroworld-logo.png"
-                  alt="NootroWorld"
-                  width={240}
-                  height={48}
-                  className="h-10 w-auto brightness-0 invert"
-                />
-              </div>
-              <p className="text-gray-400">Your trusted source for dietary supplement information.</p>
-            </div>
-
-            {/* Quick links */}
-            <div>
-              <h5 className="font-semibold mb-4">Quick Links</h5>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="/supplements" className="hover:text-white transition-colors">
-                    All Supplements
-                  </Link>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Categories
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h5 className="font-semibold mb-4">Contact</h5>
-              <p className="text-gray-400">contact@nootroworld.com</p>
-              <p className="text-gray-400 mt-2">(11) 9999-9999</p>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 NootroWorld - All rights reserved</p>
-          </div>
-        </div>
-      </footer>
+      {/* Footer Component */}
+      <Footer />
     </div>
   )
 }
