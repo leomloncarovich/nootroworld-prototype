@@ -27,7 +27,7 @@ interface Supplement {
   topPrice: string         // Preço formatado (ex: "$12.99")
   badge?: string           // Badge especial (opcional)
   link?: string            // Link para página detalhada (opcional)
-  benefits: string[]       // Array de benefícios
+  benefits: Array<{name: string, description?: string}>  // Array de objetos com name e description
 }
 
 export default function SupplementsPage() {
@@ -161,24 +161,18 @@ export default function SupplementsPage() {
                     <div className="flex flex-wrap gap-1">
                       {supplement.benefits.map((benefit, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs">
-                          {benefit}
+                          {benefit.name}
                         </Badge>
                       ))}
                     </div>
                   </div>
 
                   {/* ===== AÇÃO PRINCIPAL ===== */}
-                  {/* Botão para ver detalhes ou indicação de "em breve" */}
+                  {/* Botão para ver detalhes - agora funciona para TODOS os suplementos */}
                   <div className="flex items-center justify-center pt-4 border-t">
-                    {supplement.link && supplement.link !== "#" ? (
-                      <Link href={supplement.link}>
-                        <Button className="bg-green-600 hover:bg-green-700">View Details</Button>
-                      </Link>
-                    ) : (
-                      <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                        Coming Soon
-                      </Button>
-                    )}
+                    <Link href={`/supplements/${supplement.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')}`}>
+                      <Button className="bg-green-600 hover:bg-green-700">View Details</Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
