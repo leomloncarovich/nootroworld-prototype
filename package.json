@@ -7,7 +7,53 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "tsx prisma/seed.ts"
+    "type-check": "tsc --noEmit",
+    
+    "// === DOCKER SCRIPTS ===": "",
+    "docker:dev": "docker-compose up --build",
+    "docker:dev:detached": "docker-compose up --build -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --remove-orphans",
+    
+    "// === PRODUÇÃO ===": "",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up --build -d",
+    "docker:prod:down": "docker-compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker-compose -f docker-compose.prod.yml logs -f",
+    
+    "// === BANCO DE DADOS ===": "",
+    "db:setup": "docker-compose up postgres -d && npm run db:migrate && npm run db:generate",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "db:seed": "npx prisma db seed",
+    "db:reset": "npx prisma migrate reset",
+    "db:push": "npx prisma db push",
+    
+    "// === UTILITÁRIOS ===": "",
+    "docker:shell": "docker-compose exec app sh",
+    "docker:db:shell": "docker-compose exec postgres psql -U nootrouser -d nootrodb",
+    "docker:restart": "docker-compose restart",
+    "docker:rebuild": "docker-compose down && docker-compose up --build -d",
+    
+    "// === LIMPEZA ===": "",
+    "docker:prune": "docker system prune -f",
+    "docker:prune:all": "docker system prune -af --volumes",
+    "docker:remove:containers": "docker rm -f $(docker ps -aq)",
+    "docker:remove:images": "docker rmi -f $(docker images -aq)",
+    
+    "// === HEALTH CHECK ===": "",
+    "docker:status": "docker-compose ps",
+    "docker:health": "docker-compose ps && docker-compose logs --tail=10",
+    
+    "// === BACKUP ===": "",
+    "db:backup": "docker-compose exec postgres pg_dump -U nootrouser nootrodb > backup_$(date +%Y%m%d_%H%M%S).sql",
+    "db:restore": "docker-compose exec -T postgres psql -U nootrouser -d nootrodb < backup.sql"
+  },
+  
+  "// === CONFIGURAÇÃO PRISMA ===": "",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -1,20 +1,81 @@
+version: '3.8'
+
 services:
+  # Banco de dados PostgreSQL
   postgres:
-    image: postgres:17-alpine
+    image: postgres:15-alpine
+    container_name: nootroworld-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: nootrouser
-      POSTGRES_PASSWORD: nootropass
-      POSTGRES_DB: nootrodb
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-nootrouser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nootropass}
+      POSTGRES_DB: ${POSTGRES_DB:-nootrodb}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - nootroworld-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nootrouser -d nootrodb"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nootrouser}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Aplicação Next.js
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nootroworld-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nootrouser}:${POSTGRES_PASSWORD:-nootropass}@postgres:5432/${POSTGRES_DB:-nootrodb}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-development-secret-key}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - nootroworld-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run dev
+
+  # pgAdmin (opcional - para administração do banco)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nootroworld-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nootroworld.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - nootroworld-network
+    depends_on:
+      - postgres
+    profiles:
+      - admin  # Use: docker-compose --profile admin up
+
 volumes:
-  postgres_data: 
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  nootroworld-network:
+    driver: bridge
