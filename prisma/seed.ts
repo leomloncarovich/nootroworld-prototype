@@ -865,11 +865,24 @@ async function main() {
     }
   ]
 
+  console.log('Creating products...')
   for (const product of products) {
-    await prisma.product.create({
-      data: product
+    // Verificar se o produto já existe
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        name: product.name,
+        supplementId: product.supplementId
+      }
     })
-    console.log(`✅ Created product: ${product.name}`)
+    
+    if (existingProduct) {
+      console.log(`Product ${product.name} already exists, skipping...`)
+    } else {
+      await prisma.product.create({
+        data: product
+      })
+      console.log(`✅ Created product: ${product.name}`)
+    }
   }
 
   // ===== CRIAR NOVOS PRODUTOS =====
@@ -1260,10 +1273,22 @@ async function main() {
   ]
 
   for (const product of newProducts) {
-        await prisma.product.create({
-          data: product
-        })
-    console.log(`✅ Created product: ${product.name}`)
+    // Verificar se o produto já existe
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        name: product.name,
+        supplementId: product.supplementId
+      }
+    })
+    
+    if (existingProduct) {
+      console.log(`Product ${product.name} already exists, skipping...`)
+    } else {
+      await prisma.product.create({
+        data: product
+      })
+      console.log(`✅ Created product: ${product.name}`)
+    }
   }
 
   // ===== CRIAR GUIAS DE USO =====
